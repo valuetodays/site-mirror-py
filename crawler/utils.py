@@ -1,6 +1,6 @@
+import logging
 import os
 import re
-import logging
 from urllib.parse import urlparse
 
 import requests
@@ -57,9 +57,12 @@ def save_file_async(site_path, file_path, file_name, byte_content):
     path = site_path + file_path
     if not path.endswith('/'): path = path + '/'
     if not os.path.exists(path): os.makedirs(path)
+    #
+    target_file = path + file_name
+    if os.path.exists(target_file): return (1, None)
 
     try:
-        file = open(path + file_name, "wb")
+        file = open(target_file, "wb")
         file.write(byte_content)
         file.close()
         return (1, None)

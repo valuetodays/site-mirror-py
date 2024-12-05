@@ -26,6 +26,7 @@ class WorkerPool:
         while True:
             if self.exit_signal: break
             if not self.queue.empty():
+                #time.sleep(2)
                 task = self.queue.get()
                 msg = '从队列中取出成员, 调用worker. task: {task:s}'
                 logger.debug(msg.format(task = str(task)))

@@ -4,6 +4,14 @@
 
 python版本: 3.7
 
+## `我的更改`
+
+- [x] 添加要删除的选择器，见 crawler/config.py中的selectors_to_remove
+  - 示例值：`#idName`，`.className`，`div#idName`，`div.className`等
+- [x] 访问频繁时的文本，见 crawler/config.py中的access_too_frequent_texts
+- [x] 保存文件时若已存在就跳过
+
+
 ## 功能特性
 
 1. 指定抓取深度(0为不限深度, 1为只抓取单页面)
@@ -19,7 +27,7 @@ python版本: 3.7
 安装依赖
 
 ```
-pip install -r requirements.txt
+pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
 ```
 
 修改`main.py`入口程序, 主要是两个配置项

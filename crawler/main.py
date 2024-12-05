@@ -1,20 +1,15 @@
-import os
-import re
-import requests
-import time
-import sqlite3
-import copy
 import logging
 from queue import Queue
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urlparse
 
 from pyquery import PyQuery
 
+from crawler.db import init_db, query_unfinished_page_tasks, query_unfinished_asset_tasks, add_or_update_url_record, \
+    update_record_status
 from crawler.page_parser import get_page_charset, parse_linking_pages, parse_linking_assets, parse_css_file
-from crawler.utils import empty_link_pattern, request_get_async, save_file_async
 from crawler.transform import trans_to_local_path
+from crawler.utils import request_get_async, save_file_async
 from crawler.worker_pool import WorkerPool
-from crawler.db import init_db, query_unfinished_page_tasks, query_unfinished_asset_tasks, add_or_update_url_record, update_record_status
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +76,7 @@ class Crawler:
         code, resp = request_get_async(task, self.config)
         if not code:
             msg = '请求页面失败, 重新入队列: task: {task:s}, err: {err:s}'
-            logger.error(msg.format(task = str(task), err = resp))
+            logger.error(msg.format(task = str(task)))
             ## 出现异常, 则失败次数加1
             ## 不需要调用enqueue(), 直接入队列.
             task['failed_times'] += 1
@@ -91,6 +86,19 @@ class Crawler:
             ## 抓取失败一般是5xx或403, 405等, 出现404基本上就没有重试的意义了, 可以直接放弃
             update_record_status(self.db_conn, task['url'], 'failed')
             return
+
+        access_too_frequent_texts = self.config['access_too_frequent_texts']
+        if access_too_frequent_texts is not None and len(access_too_frequent_texts) > 0:
+            for access_too_frequent_text in access_too_frequent_texts:
+                if access_too_frequent_text in resp.text:
+                    msg = '访问被限制, 重新入队列: task: {task:s}'
+                    logger.error(msg.format(task = str(task)))
+                    ## 出现异常, 则失败次数加1
+                    ## 不需要调用enqueue(), 直接入队列.
+                    task['failed_times'] += 1
+                    self.enqueue_page(task)
+                    return
+
         msg = '请求页面成功, 准备解析并保存: task: {task:s}'
         logger.debug(msg.format(task = str(task)))
 
@@ -109,6 +117,13 @@ class Crawler:
             logger.debug('修改页面元素链接完成')
             ## 抓取此页面上的静态资源
             self.asset_worker_pool.start(task)
+            selectors_to_remove = self.config['selectors_to_remove']
+            if selectors_to_remove is not None and len(selectors_to_remove) > 0:
+                for selector_to_remove in selectors_to_remove:
+                    try:
+                        pq_selector(selector_to_remove).remove()
+                    except Exception as ie:
+                        logger.warning("no select named " + selector_to_remove)
             byte_content = pq_selector.outer_html().encode('utf-8')
             file_path, file_name = trans_to_local_path(task['url'], 'page', self.main_site)
             code, data = save_file_async(self.config['site_path'], file_path, file_name, byte_content)

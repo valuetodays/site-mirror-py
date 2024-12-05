@@ -46,7 +46,12 @@ default_config = {
         # '/admin/*'
         # '/comments/*'
     ],
-
+    # 添加要删除的选择器
+    'selectors_to_remove': [
+    ],
+    # 访问频繁时的文本
+    'access_too_frequent_texts': [
+    ],
     'logging_config': {
         'level': logging.INFO,
         'format': '%(asctime)s %(levelname)s - %(name)s - %(filename)s - %(message)s',

@@ -1,13 +1,14 @@
-import re
 import logging
+import re
 from urllib.parse import urljoin, urlparse, urldefrag
 
 from pyquery import PyQuery
 
-from crawler.utils import charset_pattern, empty_link_pattern, css_url_pattern, url_filter
 from crawler.transform import trans_to_local_link
+from crawler.utils import charset_pattern, empty_link_pattern, css_url_pattern, url_filter
 
 logger = logging.getLogger(__name__)
+
 
 def get_page_charset(page_content):
     '''
@@ -42,6 +43,9 @@ def _parse_linking_pages(node_list, attr_name, task, config, callback = None):
     for node_item in node_list:
         url_attr = PyQuery(node_item).attr(attr_name)
         if url_attr is None or re.search(empty_link_pattern, url_attr): continue
+        #
+        if not url_attr.endswith(".md"):
+            continue
 
         ## 拼接url并忽略url中的井号
         full_url = urljoin(task['url'], url_attr)
