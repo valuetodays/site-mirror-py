@@ -75,7 +75,7 @@ class Crawler:
 
         code, resp = request_get_async(task, self.config)
         if not code:
-            msg = '请求页面失败, 重新入队列: task: {task:s}, err: {err:s}'
+            msg = '请求页面失败, 重新入队列: task: {task:s}'
             logger.error(msg.format(task = str(task)))
             ## 出现异常, 则失败次数加1
             ## 不需要调用enqueue(), 直接入队列.
